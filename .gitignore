@@ -34,4 +34,9 @@ wheels/
 
 # Sistema operativo
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Archivos y carpetas específicos del proyecto
+data/access.db
+data/logs/
+data/detected_faces/ 
