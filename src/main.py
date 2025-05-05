@@ -1,19 +1,39 @@
 import cv2
 import os
 from face_detector import FaceDetector
+from text_recognizer import TextRecognizer
+
+def is_numeric_filename(filename):
+    """Verifica si el nombre del archivo (sin extensión) contiene solo números"""
+    name = os.path.splitext(filename)[0]
+    return name.isdigit()
 
 def load_authorized_faces(detector, faces_dir):
     """Carga todas las imágenes de personas autorizadas desde el directorio"""
+    text_recognizer = TextRecognizer()
+    
     for filename in os.listdir(faces_dir):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-            # El nombre de la persona será el nombre del archivo sin la extensión
-            person_name = os.path.splitext(filename)[0]
             image_path = os.path.join(faces_dir, filename)
             
-            if detector.load_authorized_face(image_path, person_name):
-                print(f"Imagen cargada exitosamente: {person_name}")
+            # Leer la imagen
+            image = cv2.imread(image_path)
+            if image is not None:
+                # Intentar extraer texto de la credencial
+                extracted_text = text_recognizer.extract_text(image)
+                if extracted_text:
+                    person_name = extracted_text
+                    print(f"Texto extraído de credencial en {filename}: {person_name}")
+                    
+                    # Usar esta imagen para el reconocimiento facial
+                    if detector.load_authorized_face(image_path, person_name):
+                        print(f"Imagen cargada exitosamente como: {person_name}")
+                    else:
+                        print(f"Error al cargar la imagen para reconocimiento facial")
+                else:
+                    print(f"No se encontró credencial en {filename}")
             else:
-                print(f"Error al cargar la imagen: {person_name}")
+                print(f"Error al leer la imagen {filename}")
 
 def main():
     # Inicializar el detector
@@ -41,8 +61,8 @@ def main():
         for (top, right, bottom, left), name in results:
             # Definir color basado en si el rostro es reconocido o no
             if name == "Desconocido":
-                color = (0, 0, 255)  # Rojo en BGR
                 display_text = "No autorizado"
+                color = (0, 0, 255)  # Rojo en BGR
             else:
                 color = (0, 255, 0)  # Verde en BGR
                 display_text = name
@@ -53,7 +73,7 @@ def main():
             padding_v = int(height * 0.2)  # 20% de padding vertical
             padding_h = int(width * 0.2)   # 20% de padding horizontal
             
-            # Ajustar las coordenadas con padding, asegurando que no se salgan del frame
+            # Ajustar las coordenadas con padding
             top_pad = max(0, top - padding_v)
             bottom_pad = min(frame.shape[0], bottom + padding_v)
             left_pad = max(0, left - padding_h)
@@ -62,11 +82,11 @@ def main():
             # Dibujar un rectángulo alrededor del rostro
             cv2.rectangle(frame, (left_pad, top_pad), (right_pad, bottom_pad), color, 3)
             
-            # Dibujar el nombre debajo del rectángulo
-            text_size = 0.8  # Tamaño de fuente
-            text_thickness = 2  # Grosor del texto
+            # Dibujar el texto
+            text_size = 0.8
+            text_thickness = 2
             
-            # Calcular el tamaño del texto para el fondo dependiendo de la etiqueta a poner en el cuadro de itentificacion
+            # Calcular el tamaño del texto para el fondo
             (text_width, text_height), _ = cv2.getTextSize(display_text, 
                                                          cv2.FONT_HERSHEY_DUPLEX, 
                                                          text_size, 
