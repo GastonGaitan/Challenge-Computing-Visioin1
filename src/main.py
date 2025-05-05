@@ -16,24 +16,32 @@ def load_authorized_faces(detector, faces_dir):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
             image_path = os.path.join(faces_dir, filename)
             
-            # Leer la imagen
-            image = cv2.imread(image_path)
-            if image is not None:
-                # Intentar extraer texto de la credencial
-                extracted_text = text_recognizer.extract_text(image)
-                if extracted_text:
-                    person_name = extracted_text
-                    print(f"Texto extraído de credencial en {filename}: {person_name}")
-                    
-                    # Usar esta imagen para el reconocimiento facial
-                    if detector.load_authorized_face(image_path, person_name):
-                        print(f"Imagen cargada exitosamente como: {person_name}")
+            # Si el nombre del archivo es numérico, buscar credencial
+            if is_numeric_filename(filename):
+                print(f"Procesando imagen con nombre numérico: {filename}")
+                image = cv2.imread(image_path)
+                if image is not None:
+                    # Intentar extraer texto de la credencial
+                    extracted_text = text_recognizer.extract_text(image)
+                    if extracted_text:
+                        person_name = extracted_text
+                        print(f"Texto extraído de credencial: {person_name}")
                     else:
-                        print(f"Error al cargar la imagen para reconocimiento facial")
+                        person_name = os.path.splitext(filename)[0]
+                        print(f"No se encontró credencial, usando nombre del archivo: {person_name}")
                 else:
-                    print(f"No se encontró credencial en {filename}")
+                    person_name = os.path.splitext(filename)[0]
+                    print(f"Error al leer la imagen, usando nombre del archivo: {person_name}")
             else:
-                print(f"Error al leer la imagen {filename}")
+                # Si el nombre tiene letras, usar el nombre del archivo
+                person_name = os.path.splitext(filename)[0]
+                print(f"Usando nombre del archivo: {person_name}")
+            
+            # Cargar la imagen para reconocimiento facial
+            if detector.load_authorized_face(image_path, person_name):
+                print(f"Imagen cargada exitosamente como: {person_name}")
+            else:
+                print(f"Error al cargar la imagen: {person_name}")
 
 def main():
     # Inicializar el detector
