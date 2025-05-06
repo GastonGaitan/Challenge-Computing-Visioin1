@@ -45,7 +45,7 @@
                                 <td>{{ acceso.id }}</td>
                                 <td>
                                     {% if acceso.imagen %}
-                                    <img src="/static/{{ acceso.imagen }}" class="face-image" alt="Rostro">
+                                    <img src="{{ acceso.imagen }}" class="face-image" alt="Rostro">
                                     {% else %}
                                     <span class="text-muted">Sin imagen</span>
                                     {% endif %}
